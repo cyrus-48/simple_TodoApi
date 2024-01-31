@@ -53,6 +53,12 @@ async def update_todo_completed_by_id(id: int = Path(..., gt=0), todo_crud: Todo
     todo = await todo_crud.put_completed(id)
     return  {"message": "Todo updated successfully"}
 
+@router.get("/search/{q}", response_model=List[TodoInDB])
+async def search(q: str = Path(..., min_length=3), todo_crud: TodoCrud = Depends(),):
+    ''' Search todo by title '''
+    todos = await todo_crud.search(q)
+    return todos
+
 @router.delete("/{id}" )
 async def delete_todo_by_id(id: int = Path(..., gt=0), todo_crud: TodoCrud = Depends(),):
     todo = await todo_crud.get_one_todo_by_id(id)
