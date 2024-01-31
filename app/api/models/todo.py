@@ -13,8 +13,12 @@ class TodoCreate(TodoBase):
 class TodoUpdate(TodoBase):
     pass
 
-class TodoInDB(TodoBase):
-    id: int 
+class TodoInDB(TodoBase): 
+    is_completed: bool
+    created_at: datetime
+    updated_at: datetime
+    id :int
+    
     
     class Config:
         orm_mode = True

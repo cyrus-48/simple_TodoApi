@@ -1,5 +1,5 @@
-from sqlalchemy import Column, Integer, String, DateTime, ForeignKey , create_engine , Boolean ,MetaData , Table
-from sqlalchemy.orm import relationship
+from sqlalchemy import Column, Integer, String, DateTime, ForeignKey ,Text, create_engine , Boolean ,MetaData , Table
+from sqlalchemy.orm import relationship , sessionmaker
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.sql import func
 from databases import Database 
@@ -8,19 +8,30 @@ DATABASE_URL = "sqlite:///./test.db"
 engine = create_engine(DATABASE_URL, connect_args={"check_same_thread": False} , echo=True)
 metadata = MetaData()
 
-Base = declarative_base() # ORM
+SessionLocal  = sessionmaker(autocommit=False, autoflush=False, bind=engine)
+
  
-todos = Table(
+Base  = declarative_base()
+meatadat = MetaData()
+
+class Todo(Base):
+    __tablename__ = 'todos'
+    id = Column(Integer, primary_key=True)
+    title  = Column(String(100), nullable=False)
+    description = Column(String(), default="")
+    is_completed = Column(Boolean, default=False)
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
+    updated_at = Column(DateTime(timezone=True), onupdate=func.now())
     
-    "todos",
-    metadata,
-    Column("id", Integer, primary_key=True),
-    Column("title", String(255)),
-    Column("description", String(255)),
-    Column("is_completed", Boolean, default=False),
-    Column("created_at", DateTime(timezone=True), server_default=func.now()),
-    Column("updated_at", DateTime(timezone=True), server_default=func.now(), onupdate=func.now()),
     
-)
+def get_db():
+    try:
+        db = SessionLocal()
+        yield db
+        
+    finally:
+        db.close()
+
+
+
     
-database  = Database(DATABASE_URL)

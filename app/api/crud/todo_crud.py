@@ -1,60 +1,60 @@
 from app.api.models.todo import TodoCreate, TodoUpdate , TodoInDB
-from app.db import todos, database  
-from typing import List
+from app.db import Todo, get_db
+from sqlalchemy.orm import Session
+from fastapi import Depends
+from typing import List , Annotated
 from datetime import datetime as dt
 
-class TodoCrud:
-    db = None
-    table = None
-    def __init__(self ):
-        self.db  =  database
-        self.table  =  todos
-        
-    async def post(self , payload: TodoCreate):
-        query = self.table.insert().values(
-            title = payload.title,
-            description = payload.description
-        )
-        return await self.db.execute(query)
+
+class TodoCrud:  
     
-    async def get_all_todos(self):
-        query = self.table.select()
-        return await self.db.fetch_all(query)
+    def __init__(self , db_session :Session = Depends(get_db)): 
+        self.model  = Todo
+        self.db_session  =  db_session
+
+    async def post(self , payload: TodoCreate):  
+            todo = self.model(title=payload.title, description=payload.description)
+            todo.created_at = todo.updated_at = dt.now()
+            self.db_session.add(todo)
+            self.db_session.commit()
+            self.db_session.refresh(todo)
+            
+            return todo 
     
+    async def get_all_todos(self): 
+        return self.db_session.query(self.model).all()
     async def get_one_todo_by_id(self , id: int):
-        query = self.table.select().where(self.table.c.id == id)
-        return await self.db.fetch_one(query)
+        return self.db_session.query(self.model).filter(self.model.id == id).first()
+    async def put(self , id: int , payload: TodoUpdate): 
+        todo = self.db_session.query(self.model).filter(self.model.id == id).first()
+        todo.title = payload.title
+        todo.description = payload.description
+        todo.updated_at = dt.now()
+        self.db_session.commit()
+        self.db_session.refresh(todo)
+        return todo
     
-    async def put(self , id: int , payload: TodoUpdate):
-        query = self.table.update().where(self.table.c.id == id).values(
-            title = payload.title,
-            description = payload.description,
-        )
-        return await self.db.execute(query)
+    async def delete(self , id: int): 
+        todo = self.db_session.query(self.model).filter(self.model.id == id).first()
+        self.db_session.delete(todo)
+        self.db_session.commit()
+        return todo
     
-    async def delete(self , id: int):
-        query = self.table.delete().where(self.table.c.id == id)
-        return await self.db.execute(query)
-    
-    
-    async def get_all_todos_completed(self):
-        query = self.table.select().where(self.table.c.is_completed == True)
-        return await self.db.fetch_all(query)
-    
-    async def get_all_todos_not_completed(self):
-        query = self.table.select().where(self.table.c.is_completed == False)
-        return await self.db.fetch_all(query)
-    
-    async def put_completed(self , id: int):
-        query = self.table.update().where(self.table.c.id == id).values(
-            is_completed = True,
-        )
-        return await self.db.execute(query)
+    async def get_all_todos_completed(self): 
+        return self.db_session.query(self.model).filter(self.model.is_completed == True).all()
+    async def get_all_todos_not_completed(self): 
+        return self.db_session.query(self.model).filter(self.model.is_completed == False).all()
+    async def put_completed(self , id: int):  
+        todo = self.db_session.query(self.model).filter(self.model.id == id).first()
+        todo.is_completed = True
+        todo.updated_at = dt.now()
+        self.db_session.commit()
+        self.db_session.refresh(todo)
+        return todo
     
     
-    async def search(self , q: str):
-        query = self.table.select().where(self.table.c.title.contains(q))
-        return await self.db.fetch_all(query)
+    async def search(self , q: str): 
+        return self.db_session.query(self.model).filter(self.model.title.contains(q)).all()
     
     
     
