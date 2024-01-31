@@ -14,8 +14,8 @@ class TodoUpdate(TodoBase):
 
 class TodoInDB(TodoBase):
     id: int
-    created_at: str
-    updated_at: str
+    created_at: datetime
+    updated_at: datetime
     
     class Config:
         orm_mode = True
