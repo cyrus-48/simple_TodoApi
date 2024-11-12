@@ -8,7 +8,9 @@ router = APIRouter(
     prefix="/todos",
     tags=["todos"],
 )
-
+@router.get("/test")
+async def test_route():
+    return {"test":"test"}
 @router.post("/", response_model=TodoInDB, status_code=status.HTTP_201_CREATED)
 async def create_todo( payload: TodoCreate, todo_crud: TodoCrud = Depends(),):
     todo = await todo_crud.post(payload)    
